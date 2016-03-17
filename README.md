@@ -51,6 +51,8 @@ letsencrypt.sh will wait indefinitely for you to create the TXT record, and for 
  
 ```
 
+When complete, a second email will be sent notifying you that the TXT record can be removed.
+
 ## OCSP stapling file
 
 If you're behind a firewall and can only access the internet via proxy, you need to provide a stapling file. email-notify-hook can optionally generate this stapling file after generating the certificate.
