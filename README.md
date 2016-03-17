@@ -36,7 +36,7 @@ Processing example.com
 
 Check your email and create the TXT record specified. Use the smallest TTL possible.
 
-letsencrypt.sh will wait indefinitely for the TXT record to be created and to propagate (this may take a while):
+letsencrypt.sh will wait indefinitely for you to create the TXT record, and for it propagate (this may take a while):
 
 ```
  + DNS not propagated. Waiting 30s for record creation and replication...
