@@ -19,7 +19,6 @@ git clone https://github.com/kappataumu/letsencrypt-cloudflare-hook hooks/email-
 If RECIPIENT is set, the email will be sent to the email address specified. Otherwise, it will be sent to the current user.
 
 ```
-export RECIPIENT=test-user@example.com
 ./letsencrypt.sh --cron --domain example.com --challenge dns-01 --hook 'hooks/email-notify/hook.sh'
 #
 # !! WARNING !! No main config file found, using default config!
