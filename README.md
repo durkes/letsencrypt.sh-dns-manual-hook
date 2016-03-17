@@ -1,6 +1,6 @@
 # letsencrypt.sh-email-notify-hook
 
-Allows letsencrypt.sh to notify you by email when a new DNS record needs to be created. This is useful when your DNS provider has no API and does not support DDNS.
+This is a hook for [letsencrypt.sh](https://github.com/lukas2511/letsencrypt.sh) that notifies you by email when a new DNS record needs to be created. This is useful when your DNS provider has no API and does not support DDNS, and record creation needs to be done manually. With this hook, you will be notified when a new challenge is ready to be deployed.
 
 When using this hook, letsencrypt.sh will generate a new certificate and wait for you to manually update the challenge record with your DNS provider of choice. If desired, you can schedule letsencrypt.sh using cron, and still be notified when your certificate is about to expire.
 
