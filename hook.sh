@@ -27,9 +27,8 @@ function deploy_challenge {
 
     RECORD_NAME="_acme-challenge.${DOMAIN}"
 
+    RECIPIENT=${RECIPIENT:-$(id -u -n)}
 
-
-    RECIPIENT=$(id -u -n)
     mail -s "Let's Encrypt certificate renewal" "$RECIPIENT" <<EOM
 The Let's Encrypt certificate for ${DOMAIN} is about to expire.
 Before it can be renewed, ownership of the domain must be proven by
@@ -61,7 +60,7 @@ function clean_challenge {
 
     RECORD_NAME="_acme-challenge.${DOMAIN}"
 
-    RECIPIENT=$(id -u -n)
+    RECIPIENT=${RECIPIENT:-$(id -u -n)}
     mail -s "Let's Encrypt certificate renewal" "$RECIPIENT" <<EOM
 Progagation has completed for ${DOMAIN}. The following record can now be deleted:
 
