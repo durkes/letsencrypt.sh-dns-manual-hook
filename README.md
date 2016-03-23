@@ -11,7 +11,7 @@ This should only be used if your DNS provider does not support automation. For a
 ```
 git clone https://github.com/lukas2511/letsencrypt.sh
 cd letsencrypt.sh
-git clone https://github.com/kappataumu/letsencrypt-cloudflare-hook hooks/email-notify
+git clone https://github.com/bennettp123/letsencrypt.sh-email-notify-hook hooks/email-notify
 ```
 
 ## Usage
