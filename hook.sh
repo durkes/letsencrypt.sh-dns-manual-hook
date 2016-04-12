@@ -1,72 +1,104 @@
 #!/usr/bin/env bash
 
 function has_propagated {
-    local RECORD_NAME="${1}" TOKEN_VALUE="${2}"
-    dig +short "${RECORD_NAME}" IN TXT | grep -q "${TOKEN_VALUE}"
+    while (( "$#" >= 2 )); do
+        local RECORD_NAME="${1}"; shift
+        local TOKEN_VALUE="${1}"; shift
+        dig +short "${RECORD_NAME}" IN TXT | grep -q "${TOKEN_VALUE}" || return 1
+    done
+    return 0
 }
 
 function deploy_challenge {
-    local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
-
-    # This hook is called once for every domain that needs to be
-    # validated, including any alternative names you may have listed.
-    #
-    # Parameters:
-    # - DOMAIN
-    #   The domain name (CN or subject alternative name) being
-    #   validated.
-    # - TOKEN_FILENAME
-    #   The name of the file containing the token to be served for HTTP
-    #   validation. Should be served by your web server as
-    #   /.well-known/acme-challenge/${TOKEN_FILENAME}.
-    # - TOKEN_VALUE
-    #   The token value that needs to be served for validation. For DNS
-    #   validation, this is what you want to put in the _acme-challenge
-    #   TXT record. For HTTP validation it is the value that is expected
-    #   be found in the $TOKEN_FILENAME file.
-
-    RECORD_NAME="_acme-challenge.${DOMAIN}"
-
+    local RECORDS=()
     RECIPIENT=${RECIPIENT:-$(id -u -n)}
+    local FIRSTDOMAIN="${1}"
+    local SUBJECT="Let's Encrypt certificate renewal"
+    while (( "$#" >= 3 )); do
+        local DOMAIN="${1}"; shift
+        local TOKEN_FILENAME="${1}"; shift
+        local TOKEN_VALUE="${1}"; shift
 
-    mail -s "Let's Encrypt certificate renewal" "$RECIPIENT" <<EOM
-The Let's Encrypt certificate for ${DOMAIN} is about to expire.
+        # This hook is called once for every domain that needs to be
+        # validated, including any alternative names you may have listed.
+        #
+        # Parameters:
+        # - DOMAIN
+        #   The domain name (CN or subject alternative name) being
+        #   validated.
+        # - TOKEN_FILENAME
+        #   The name of the file containing the token to be served for HTTP
+        #   validation. Should be served by your web server as
+        #   /.well-known/acme-challenge/${TOKEN_FILENAME}.
+        # - TOKEN_VALUE
+        #   The token value that needs to be served for validation. For DNS
+        #   validation, this is what you want to put in the _acme-challenge
+        #   TXT record. For HTTP validation it is the value that is expected
+        #   be found in the $TOKEN_FILENAME file.
+
+        RECORD_NAME="_acme-challenge.${DOMAIN}"
+        RECORDS+=( ${RECORD_NAME} )
+        RECORDS+=( ${TOKEN_VALUE} )
+    done
+
+    read -d '' MESSAGE <<EOF
+The Let's Encrypt certificate for ${FIRSTDOMAIN} is about to expire.
 Before it can be renewed, ownership of the domain must be proven by
 responding to a challenge.
 
-Please deploy the following record to validate ownership of ${DOMAIN}:
+Please deploy the following record(s) to validate ownership of ${FIRSTDOMAIN}:
 
-    ${RECORD_NAME} IN TXT ${TOKEN_VALUE}
+EOF
 
-EOM
+    while (( "${#RECORDS}" >= 2 )); do
+        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
+        RECORDS=( "${RECORDS[@]:2}" )
+    done
+
+    echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
 
     echo " + Settling down for 10s..."
     sleep 10
 
-    while ! has_propagated "${RECORD_NAME}" "${TOKEN_VALUE}"; do
-        echo " + DNS not propagated. Waiting 30s for record creation and replication..."
-        sleep 30
+    while ! has_propagated "${RECORDS[@]}"; do
+         echo " + DNS not propagated. Waiting 30s for record creation and replication..."
+         sleep 30
     done
 }
 
 function clean_challenge {
-    local DOMAIN="${1}" TOKEN_FILENAME="${2}" TOKEN_VALUE="${3}"
-
-    # This hook is called after attempting to validate each domain,
-    # whether or not validation was successful. Here you can delete
-    # files or DNS records that are no longer needed.
-    #
-    # The parameters are the same as for deploy_challenge.
-
-    RECORD_NAME="_acme-challenge.${DOMAIN}"
-
+    local RECORDS=()
     RECIPIENT=${RECIPIENT:-$(id -u -n)}
-    mail -s "Let's Encrypt certificate renewal" "$RECIPIENT" <<EOM
-Progagation has completed for ${DOMAIN}. The following record can now be deleted:
+    local FIRSTDOMAIN="${1}"
+    local SUBJECT="Let's Encrypt certificate renewal"
+    while (( "$#" >= 3 )); do
+        local DOMAIN="${1}"; shift
+        local TOKEN_FILENAME="${1}"; shift
+        local TOKEN_VALUE="${1}"; shift
 
-    ${RECORD_NAME} IN TXT ${TOKEN_VALUE}
+        # This hook is called after attempting to validate each domain,
+        # whether or not validation was successful. Here you can delete
+        # files or DNS records that are no longer needed.
+        #
+        # The parameters are the same as for deploy_challenge.
 
-EOM
+        RECORD_NAME="_acme-challenge.${DOMAIN}"
+        RECORDS+=( ${RECORD_NAME} )
+        RECORDS+=( ${TOKEN_VALUE} )
+    done
+
+    read -d '' MESSAGE <<EOF
+Progagation has completed for ${FIRSTDOMAIN}. The following record(s) can now be deleted:
+
+EOF
+
+    while (( "${#RECORDS}" >= 2 )); do
+        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
+        RECORDS=( "${RECORDS[@]:2}" )
+    done
+
+    echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
+
 }
 
 function deploy_cert {
