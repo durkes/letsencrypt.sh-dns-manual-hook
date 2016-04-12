@@ -143,4 +143,8 @@ function deploy_cert {
     fi
 }
 
+function unchanged_cert {
+    # not yet implemented
+}
+
 HANDLER=$1; shift; $HANDLER $@
