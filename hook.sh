@@ -49,10 +49,8 @@ responding to a challenge.
 Please deploy the following record(s) to validate ownership of ${FIRSTDOMAIN}:
 
 EOF
-
-    while (( "${#RECORDS}" >= 2 )); do
-        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
-        RECORDS=( "${RECORDS[@]:2}" )
+    for (( i=0; i < "${#RECORDS[@]}"; i+=2 )); do
+        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
     done
 
     echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
