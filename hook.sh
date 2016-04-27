@@ -50,7 +50,7 @@ Please deploy the following record(s) to validate ownership of ${FIRSTDOMAIN}:
 
 EOF
     for (( i=0; i < "${#RECORDS[@]}"; i+=2 )); do
-        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
+        MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
     done
 
     echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
@@ -91,7 +91,7 @@ Progagation has completed for ${FIRSTDOMAIN}. The following record(s) can now be
 EOF
 
     while (( "${#RECORDS}" >= 2 )); do
-        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
+        MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
         RECORDS=( "${RECORDS[@]:2}" )
     done
 
