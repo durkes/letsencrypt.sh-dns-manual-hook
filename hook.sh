@@ -35,7 +35,9 @@ function oscp_update {
     if [ -n "${OCSP_RESPONSE_FILE}" ]; then
 
         if [ -z "${OCSP_HOST}" ]; then
-            OCSP_HOST="${http_proxy}"
+            OCSP_HOST="${http_proxy}" # eg http://foo.bar:3128/
+	    # strip protocol and path:
+	    OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
         fi
 
         if [ -n "${OCSP_HOST}" ]; then
