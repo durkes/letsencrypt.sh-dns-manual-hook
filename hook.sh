@@ -9,6 +9,43 @@ function has_propagated {
     return 0
 }
 
+function oscp_update {
+    local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}" TIMESTAMP="${6}"
+
+    # Get oscp response and shove it into a file, used for OCSP stapling.
+    #
+    # You only need this for old versions of of nginx that can't do this itself,
+    # or if your server is behind a proxy (eg nginx can't do OCSP via HTTP proxy).
+    #
+    # Parameters:
+    # - DOMAIN
+    #   The primary domain name, i.e. the certificate common
+    #   name (CN).
+    # - KEYFILE
+    #   The path of the file containing the private key.
+    # - CERTFILE
+    #   The path of the file containing the signed certificate.
+    # - FULLCHAINFILE
+    #   The path of the file containing the full certificate chain.
+    # - CHAINFILE
+    #   The path of the file containing the intermediate certificate(s).
+    # - TIMESTAMP
+    #   Timestamp when the specified certificate was created.
+
+    if [ -n "${OCSP_RESPONSE_FILE}" ]; then
+
+        if [ -z "${OCSP_HOST}" ]; then
+            OCSP_HOST="${http_proxy}"
+        fi
+
+        if [ -n "${OCSP_HOST}" ]; then
+            openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -host "${OCSP_HOST}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
+        else
+            openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
+        fi
+    fi
+}
+
 function deploy_challenge {
     local RECORDS=()
     RECIPIENT=${RECIPIENT:-$(id -u -n)}
@@ -100,7 +137,7 @@ EOF
 }
 
 function deploy_cert {
-    local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}"
+    local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}" TIMESTAMP="${6}"
 
     # This hook is called once for each certificate that has been
     # produced. Here you might, for instance, copy your new certificates
@@ -118,32 +155,32 @@ function deploy_cert {
     #   The path of the file containing the full certificate chain.
     # - CHAINFILE
     #   The path of the file containing the intermediate certificate(s).
+    # - TIMESTAMP
+    #   Timestamp when the specified certificate was created.
 
-    # Get oscp response and shove it into a file, used for OCSP stapling.
-    #
-    # You only need this for old versions of of nginx that can't do this itself.
-    # It's also useful if you want to use OCSP staping, but can't connect directly
-    # to the internet (nginx can't do OCSP via HTTP proxy).
-    #
-    # If you enable, this, you should also update the file regularly using cron.
-    #
-    if [ -n "${OCSP_RESPONSE_FILE}" ]; then
-
-        if [ -z "${OCSP_HOST}" ]; then
-            OCSP_HOST="${http_proxy}"
-        fi
-
-        if [ -n "${OCSP_HOST}" ]; then
-            openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -host "${OCSP_HOST}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
-        else
-            openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
-        fi
-    fi
+    oscp_update $@
 }
 
 function unchanged_cert {
-    # not yet implemented
-    :;
+    local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}"
+
+    # This hook is called once for each certificate that is still
+    # valid and therefore wasn't reissued.
+    #
+    # Parameters:
+    # - DOMAIN
+    #   The primary domain name, i.e. the certificate common
+    #   name (CN).
+    # - KEYFILE
+    #   The path of the file containing the private key.
+    # - CERTFILE
+    #   The path of the file containing the signed certificate.
+    # - FULLCHAINFILE
+    #   The path of the file containing the full certificate chain.
+    # - CHAINFILE
+    #   The path of the file containing the intermediate certificate(s).
+
+    oscp_update $@
 }
 
 HANDLER=$1; shift; $HANDLER $@
