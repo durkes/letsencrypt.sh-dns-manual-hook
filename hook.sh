@@ -4,7 +4,7 @@ function has_propagated {
     while (( "$#" >= 2 )); do
         local RECORD_NAME="${1}"; shift
         local TOKEN_VALUE="${1}"; shift
-        dig +short "${RECORD_NAME}" IN TXT | grep -q \"${TOKEN_VALUE}\" || return 1
+        dig +short "${RECORD_NAME}" IN TXT | grep -q "\"${TOKEN_VALUE}\"" || return 1
     done
     return 0
 }
