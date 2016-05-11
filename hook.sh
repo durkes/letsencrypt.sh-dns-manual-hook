@@ -9,7 +9,7 @@ function has_propagated {
     return 0
 }
 
-function oscp_update {
+function ocsp_update {
     local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}" TIMESTAMP="${6}"
 
     # Get oscp response and shove it into a file, used for OCSP stapling.
@@ -40,12 +40,26 @@ function oscp_update {
 	    OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
         fi
 
+        if [ -n "$VERBOSE" ]; then
+          echo "OCSP_HOST: $OCSP_HOST"
+          echo "http_proxy: $http_proxy"
+          echo "OCSP_RESPONSE_FILE: $OCSP_RESPONSE_FILE"
+          echo "CHAINFILE: $CHAINFILE"
+          echo "CERTFILE: $CERTFILE"
+          echo "command: openssl ocsp -noverify -no_nonce -respout \"${OCSP_RESPONSE_FILE}\" -issuer \"${CHAINFILE}\" -cert \"${CERTFILE}\" -host \"${OCSP_HOST}\" -path \"\$(openssl x509 -noout -ocsp_uri -in \"${CERTFILE}\")\" -CApath \"/etc/ssl/certs\""
+        fi
+
         if [ -n "${OCSP_HOST}" ]; then
             openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -host "${OCSP_HOST}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
         else
             openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
         fi
     fi
+}
+
+function oscp_update {
+    #oops :)
+    ocsp_update "$@"
 }
 
 function deploy_challenge {
@@ -160,7 +174,7 @@ function deploy_cert {
     # - TIMESTAMP
     #   Timestamp when the specified certificate was created.
 
-    oscp_update $@
+    oscp_update "$@
 }
 
 function unchanged_cert {
@@ -182,7 +196,7 @@ function unchanged_cert {
     # - CHAINFILE
     #   The path of the file containing the intermediate certificate(s).
 
-    oscp_update $@
+    oscp_update "$@"
 }
 
-HANDLER=$1; shift; $HANDLER $@
+HANDLER=$1; shift; $HANDLER "$@"
