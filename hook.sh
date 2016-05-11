@@ -4,12 +4,12 @@ function has_propagated {
     while (( "$#" >= 2 )); do
         local RECORD_NAME="${1}"; shift
         local TOKEN_VALUE="${1}"; shift
-        dig +short "${RECORD_NAME}" IN TXT | grep -q "\"${TOKEN_VALUE}\"" || return 1
+        dig +short "${RECORD_NAME}" IN TXT | grep -q "${TOKEN_VALUE}" || return 1
     done
     return 0
 }
 
-function oscp_update {
+function ocsp_update {
     local DOMAIN="${1}" KEYFILE="${2}" CERTFILE="${3}" FULLCHAINFILE="${4}" CHAINFILE="${5}" TIMESTAMP="${6}"
 
     # Get oscp response and shove it into a file, used for OCSP stapling.
@@ -36,8 +36,17 @@ function oscp_update {
 
         if [ -z "${OCSP_HOST}" ]; then
             OCSP_HOST="${http_proxy}" # eg http://foo.bar:3128/
-	    # strip protocol and path:
-	    OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
+            # strip protocol and path:
+            OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
+        fi
+
+        if [ -n "$VERBOSE" ]; then
+          echo "OCSP_HOST: $OCSP_HOST"
+          echo "http_proxy: $http_proxy"
+          echo "OCSP_RESPONSE_FILE: $OCSP_RESPONSE_FILE"
+          echo "CHAINFILE: $CHAINFILE"
+          echo "CERTFILE: $CERTFILE"
+          echo "command: openssl ocsp -noverify -no_nonce -respout \"${OCSP_RESPONSE_FILE}\" -issuer \"${CHAINFILE}\" -cert \"${CERTFILE}\" -host \"${OCSP_HOST}\" -path \"\$(openssl x509 -noout -ocsp_uri -in \"${CERTFILE}\")\" -CApath \"/etc/ssl/certs\""
         fi
 
         if [ -n "${OCSP_HOST}" ]; then
@@ -46,6 +55,11 @@ function oscp_update {
             openssl ocsp -noverify -no_nonce -respout "${OCSP_RESPONSE_FILE}" -issuer "${CHAINFILE}" -cert "${CERTFILE}" -path "$(openssl x509 -noout -ocsp_uri -in "${CERTFILE}")" -CApath "/etc/ssl/certs"
         fi
     fi
+}
+
+function oscp_update {
+    #oops :)
+    ocsp_update "$@"
 }
 
 function deploy_challenge {
@@ -89,7 +103,7 @@ Please deploy the following record(s) to validate ownership of ${FIRSTDOMAIN}:
 
 EOF
     for (( i=0; i < "${#RECORDS[@]}"; i+=2 )); do
-        MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
+        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
     done
 
     echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
@@ -130,7 +144,7 @@ Progagation has completed for ${FIRSTDOMAIN}. The following record(s) can now be
 EOF
 
     while (( "${#RECORDS}" >= 2 )); do
-        MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
+        MESSAGE="$(printf '%s\n  %s IN TXT %s\n' "$MESSAGE" "${RECORDS[0]}" "${RECORDS[1]}")"
         RECORDS=( "${RECORDS[@]:2}" )
     done
 
@@ -160,7 +174,7 @@ function deploy_cert {
     # - TIMESTAMP
     #   Timestamp when the specified certificate was created.
 
-    oscp_update $@
+    ocsp_update "$@"
 }
 
 function unchanged_cert {
@@ -182,7 +196,7 @@ function unchanged_cert {
     # - CHAINFILE
     #   The path of the file containing the intermediate certificate(s).
 
-    oscp_update $@
+    ocsp_update "$@"
 }
 
-HANDLER=$1; shift; $HANDLER $@
+HANDLER=$1; shift; $HANDLER "$@"
