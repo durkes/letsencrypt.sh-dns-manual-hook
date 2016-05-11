@@ -174,7 +174,7 @@ function deploy_cert {
     # - TIMESTAMP
     #   Timestamp when the specified certificate was created.
 
-    oscp_update "$@
+    oscp_update "$@"
 }
 
 function unchanged_cert {
