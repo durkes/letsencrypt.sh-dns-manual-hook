@@ -64,9 +64,7 @@ function oscp_update {
 
 function deploy_challenge {
     local RECORDS=()
-    RECIPIENT=${RECIPIENT:-$(id -u -n)}
     local FIRSTDOMAIN="${1}"
-    local SUBJECT="Let's Encrypt certificate renewal"
     while (( "$#" >= 3 )); do
         local DOMAIN="${1}"; shift
         local TOKEN_FILENAME="${1}"; shift
@@ -95,10 +93,6 @@ function deploy_challenge {
     done
 
     read -d '' MESSAGE <<EOF
-The Let's Encrypt certificate for ${FIRSTDOMAIN} is about to expire.
-Before it can be renewed, ownership of the domain must be proven by
-responding to a challenge.
-
 Please deploy the following record(s) to validate ownership of ${FIRSTDOMAIN}:
 
 EOF
@@ -106,7 +100,6 @@ EOF
         MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
     done
 
-    #echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
     echo "$MESSAGE"
 
     echo " + Settling down for 10s..."
@@ -120,9 +113,7 @@ EOF
 
 function clean_challenge {
     local RECORDS=()
-    RECIPIENT=${RECIPIENT:-$(id -u -n)}
     local FIRSTDOMAIN="${1}"
-    local SUBJECT="Let's Encrypt certificate renewal"
     while (( "$#" >= 3 )); do
         local DOMAIN="${1}"; shift
         local TOKEN_FILENAME="${1}"; shift
@@ -149,7 +140,6 @@ EOF
         RECORDS=( "${RECORDS[@]:2}" )
     done
 
-    #echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
     echo "$MESSAGE"
 
 }
