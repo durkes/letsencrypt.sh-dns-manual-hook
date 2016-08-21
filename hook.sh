@@ -36,8 +36,8 @@ function ocsp_update {
 
         if [ -z "${OCSP_HOST}" ]; then
             OCSP_HOST="${http_proxy}" # eg http://foo.bar:3128/
-	    # strip protocol and path:
-	    OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
+      # strip protocol and path:
+      OCSP_HOST="$(echo "$OCSP_HOST" | sed -E 's/(\w+:\/\/)((\w|\.)+:[0-9]+?)\/?.*/\2/')" # eg foo.bar:3128
         fi
 
         if [ -n "$VERBOSE" ]; then
@@ -106,7 +106,8 @@ EOF
         MESSAGE="$(printf '%s\n  %s. IN TXT %s\n' "$MESSAGE" "${RECORDS[$i]}" "${RECORDS[$(($i + 1))]}")"
     done
 
-    echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
+    #echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
+    echo "$MESSAGE"
 
     echo " + Settling down for 10s..."
     sleep 10
@@ -148,7 +149,8 @@ EOF
         RECORDS=( "${RECORDS[@]:2}" )
     done
 
-    echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
+    #echo "$MESSAGE" | mail -s "$SUBJECT" "$RECIPIENT"
+    echo "$MESSAGE"
 
 }
 
