@@ -1,3 +1,4 @@
+```sh
 yum install git -y
 mkdir /var/letsencrypt
 cd /var/letsencrypt
@@ -12,3 +13,4 @@ tld.com \
 www.tld.com \
 sub.tld.com \
 "
+```
