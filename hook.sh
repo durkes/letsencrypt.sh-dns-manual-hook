@@ -57,11 +57,6 @@ function ocsp_update {
     fi
 }
 
-function oscp_update {
-    #oops :)
-    ocsp_update "$@"
-}
-
 function deploy_challenge {
     local RECORDS=()
     local FIRSTDOMAIN="${1}"
@@ -166,7 +161,7 @@ function deploy_cert {
     # - TIMESTAMP
     #   Timestamp when the specified certificate was created.
 
-    oscp_update "$@"
+    ocsp_update "$@"
 }
 
 function unchanged_cert {
@@ -188,7 +183,7 @@ function unchanged_cert {
     # - CHAINFILE
     #   The path of the file containing the intermediate certificate(s).
 
-    oscp_update "$@"
+    ocsp_update "$@"
 }
 
 HANDLER=$1; shift; $HANDLER "$@"
